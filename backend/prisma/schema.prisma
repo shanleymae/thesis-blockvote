@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  idNumber      String?
+  password      String
+  phone         String?
+  role          Role     @default(VOTER)
+  status        Status   @default(PENDING)
+  organizationId String?
+  canCreateGlobalElections Boolean @default(false)
+  walletAddress String?  @unique
+  isVerified    Boolean  @default(false)
+  verifyToken   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organization  Organization? @relation(fields: [organizationId], references: [id])
+  votes         Vote[]
+}
+
+model Election {
+  id                 String         @id @default(uuid())
+  title              String
+  description        String
+  scope              ElectionScope  @default(GLOBAL)
+  organizationId     String?
+  groupId            String?
+  positionTitle      String?
+  positionOrder      Int            @default(0)
+  startDate          DateTime
+  endDate            DateTime
+  status             ElectionStatus @default(UPCOMING)
+  contractElectionId Int?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  resultsPublished   Boolean        @default(false)
+  resultsPublishedAt DateTime?
+  organization       Organization?  @relation(fields: [organizationId], references: [id])
+  group              ElectionGroup? @relation(fields: [groupId], references: [id])
+  candidates         Candidate[]
+  votes              Vote[]
+}
+
+model ElectionGroup {
+  id                 String         @id @default(uuid())
+  title              String
+  description        String
+  scope              ElectionScope  @default(GLOBAL)
+  organizationId     String?
+  startDate          DateTime
+  endDate            DateTime
+  status             ElectionStatus @default(UPCOMING)
+  resultsPublished   Boolean        @default(false)
+  resultsPublishedAt DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  organization       Organization?  @relation(fields: [organizationId], references: [id])
+  elections          Election[]
+}
+
+model Organization {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  users       User[]
+  elections   Election[]
+  electionGroups ElectionGroup[]
+}
+
+model Candidate {
+  id                  String   @id @default(uuid())
+  name                String
+  description         String?
+  /** Campaign platform / services — stored off-chain (not on voting contract). */
+  platform            String?
+  /** Public profile banner background RGB (0–255); null = default theme. */
+  bannerBgR           Int?
+  bannerBgG           Int?
+  bannerBgB           Int?
+  /** Banner accent RGB (decorative blob, badge, headline line); null = default. */
+  bannerAccentR       Int?
+  bannerAccentG       Int?
+  bannerAccentB       Int?
+  electionId          String
+  contractCandidateId Int?
+  createdAt           DateTime @default(now())
+  credentials         String?
+  photoUrl            String?
+  election            Election @relation(fields: [electionId], references: [id])
+  votes               Vote[]
+}
+
+model Vote {
+  id          String    @id @default(uuid())
+  userId      String
+  electionId  String
+  candidateId String
+  txHash      String    @unique
+  createdAt   DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  election    Election  @relation(fields: [electionId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, electionId])
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  VOTER
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ElectionStatus {
+  UPCOMING
+  ACTIVE
+  CLOSED
+  PAUSED
+}
+
+enum ElectionScope {
+  GLOBAL
+  ORGANIZATION
+}

@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Election" ADD COLUMN "bannerBgR" INTEGER,
+ADD COLUMN "bannerBgG" INTEGER,
+ADD COLUMN "bannerBgB" INTEGER,
+ADD COLUMN "bannerAccentR" INTEGER,
+ADD COLUMN "bannerAccentG" INTEGER,
+ADD COLUMN "bannerAccentB" INTEGER;
